@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 module WesternMusic.Pitch where
 
+import WesternMusic.Enharmonic
 import WesternMusic.Tonal
 import Data.List
 import Data.Cyclic
@@ -26,6 +27,9 @@ class (Tonal t) => Pitched t where
     letter :: t -> Letter
     accidental :: (Integral i) => t -> i
 
+instance Enharmonic Letter where
+    x `enharmonic` y = x == y
+
 instance Tonal Letter where
     semitones C = 0
     semitones D = 2
@@ -34,13 +38,15 @@ instance Tonal Letter where
     semitones G = 7
     semitones A = 9
     semitones B = 11
-    x `enharmonic` y = x == y
     
 instance Pitched Letter where
     letter l = l
     accidental _ = 0
 
 data Class accidental = Class Letter accidental deriving(Eq)
+
+instance (Integral i) => Enharmonic (Class i) where
+    x `enharmonic` y = semitones x == semitones y
 
 instance (Integral i) => Tonal (Class i) where
     semitones (Class t a) = fromRational(toRational(truncate(((semitones t)::Rational) + toRational a) `rem` 12))
@@ -62,6 +68,9 @@ instance (Integral i, Show i) => Show (Class i) where
                 | otherwise = genericReplicate (n `div` 2) 'x'
 
 data Pitch accidental octave = Pitch (Class accidental) octave deriving(Eq)
+
+instance (Integral i, Integral j) => Enharmonic (Pitch i j) where
+    x `enharmonic` y = semitones x == semitones y
 
 instance (Integral i, Integral j) => Tonal (Pitch i j) where
     -- semitones from C4

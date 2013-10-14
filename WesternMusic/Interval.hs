@@ -4,6 +4,7 @@ module WesternMusic.Interval where
 -- as Major and Minor are overloaded concepts.
 
 import Data.Cyclic
+import WesternMusic.Enharmonic
 import WesternMusic.Tonal
 import WesternMusic.Pitch
 import qualified WesternMusic.Scale.Major as Maj
@@ -66,6 +67,9 @@ simplify (Interval (Quality n) 8)
     | n < 0 = Interval (Quality n) 8
     | otherwise = Interval (Quality n) 1
 simplify (Interval q n) = Interval q (((n - 1) `mod` 7) + 1)
+
+instance (Integral i, Integral j) => Enharmonic (Interval i j) where
+    x `enharmonic` y = semitones x == semitones y
 
 instance (Integral i, Integral j) => Tonal (Interval i j) where
     semitones (Interval q n) = fromRational(toRational (12 * octaves) + simple) where
