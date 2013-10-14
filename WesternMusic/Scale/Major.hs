@@ -1,4 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 module WesternMusic.Scale.Major where
 
 -- To be imported qualified to not clash with Minor
