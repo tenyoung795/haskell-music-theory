@@ -72,40 +72,35 @@ instance (Integral i, Integral j) => Enharmonic (Interval i j) where
     x `enharmonic` y = semitones x == semitones y
 
 instance (Integral i, Integral j) => Tonal (Interval i j) where
-    semitones (Interval q n) = fromRational(toRational (12 * octaves) + simple) where
+    semitones (Interval q n) = realToFrac(12 * octaves) + simple n' where
         (octaves, n') = (n - 1) `divMod` 7
-        doNormal :: (Integral i) => Quality i -> i -> Rational
-        doNormal Minor major = toRational(major - 1)
-        doNormal Major major = toRational major
-        doNormal (Quality 0) major = toRational major - 1/2
+        doNormal Minor major = realToFrac(major - 1)
+        doNormal Major major = realToFrac major
+        doNormal (Quality 0) major = realToFrac major - 1/2
         doNormal (Quality r) major
-            | r < 0 = toRational(major - 1 + r)
-            | otherwise = toRational(major + r)
+            | r < 0 = realToFrac(major - 1 + r)
+            | otherwise = realToFrac(major + r)
 
         normal = doNormal q
         
-        doPerfect :: (Integral i) => Quality i -> i -> Rational
-        doPerfect (Quality r) perfect = toRational(perfect + r)
-        doPerfect Minor perfect = toRational perfect - 1/2
-        doPerfect Major perfect = toRational perfect + 1/2
+        doPerfect (Quality r) perfect = realToFrac(perfect + r)
+        doPerfect Minor perfect = realToFrac perfect - 1/2
+        doPerfect Major perfect = realToFrac perfect + 1/2
 
         perfect = doPerfect q
 
-        doSimple 0 = perfect 0
-        doSimple 1 = normal 2
-        doSimple 2 = normal 4
-        doSimple 3 = perfect 5
-        doSimple 4 = perfect 7
-        doSimple 5 = normal 9
-        doSimple 6 = normal 11
-        
-        simple = doSimple n'
+        simple 0 = perfect 0
+        simple 1 = normal 2
+        simple 2 = normal 4
+        simple 3 = perfect 5
+        simple 4 = perfect 7
+        simple 5 = normal 9
+        simple 6 = normal 11
 
 instance (Integral i, Integral j) => Invertible (Interval i j) where
-    invert (Interval q n) = Interval (invert q) n' where
-        doN 8 = 1
-        doN n = 8 - ((n - 1) `mod` 7)
-        n' = doN n
+    invert (Interval q n) = Interval (invert q) (n' n) where
+        n' 8 = 1
+        n' n = 8 - ((n - 1) `mod` 7)
 
 instance (Show i, Integral i, Show j, Integral j) => Show (Interval i j) where
     show (Interval q n) = show q ++ show n
