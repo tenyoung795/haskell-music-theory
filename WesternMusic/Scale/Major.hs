@@ -12,7 +12,7 @@ class (Pitched p) => Scaled p where
     scale :: p -> [p]
     scale x = map (degree x) [Tonic ..]
 
-instance (Integral i) => Scaled (Class i) where
+instance (RealFrac r) => Scaled (Class r) where
     degree (Class l a) d = Class l' (d' + a) where
         (l', d') = natDegree l d
         natDegree F Subdominant = (B, flat)

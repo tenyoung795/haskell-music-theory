@@ -118,10 +118,10 @@ class (Pitched p) => Intervalable p where
     upByInterval :: (Integral i, Integral j) => p -> Interval i j -> p
     downByInterval :: (Integral i, Integral j) => p -> Interval i j -> p
 
-instance (Integral i) => Intervalable (Class i) where
+instance (RealFrac r) => Intervalable (Class r) where
     -- Consult the major scale degree of the beginning note,
     -- then determine the quality based on the accidental.
-    ascInterval (Class xl xa) (Class yl ya) = Interval quality (fromInteger(toInteger n + 1)) where
+    ascInterval (Class xl xa) (Class yl ya) = Interval quality (fromIntegral(n + 1)) where
         n = xl `countCW` yl
         normalQuality 0 = Major
         normalQuality (-1) = Minor
@@ -138,7 +138,7 @@ instance (Integral i) => Intervalable (Class i) where
         doQuality 4 = perfectQuality
         doQuality _ = normalQuality
 
-        quality = (doQuality n) (fromIntegral (ya - acc))
+        quality = (doQuality n) (round (ya - acc))
     upByInterval (Class l a) (Interval q n) = Class l' a'' where
         n' = (n - 1) `mod` 7
         Class l' a' = (Class l a) `Maj.degree` ((toEnum (fromIntegral n'))::Maj.Degree)
@@ -146,20 +146,20 @@ instance (Integral i) => Intervalable (Class i) where
         normal Minor = -1
         normal Major = 0
         normal (Quality x)
-            | x < 0 = -1 + x
-            | x > 0 = x
-            | otherwise = 0 ---1/2, pre-refactoring Class to use fractional accidentals
+            | x < 0 = -1 + realToFrac x
+            | x > 0 = realToFrac x
+            | otherwise = -1/2
 
-        perfect Minor = 0 -- -1/2
-        perfect Major = 0 -- 1/2
-        perfect (Quality x) = x
+        perfect Minor = -1/2
+        perfect Major = 1/2
+        perfect (Quality x) = realToFrac x
 
         differ 0 = perfect
         differ 3 = perfect
         differ 4 = perfect
         differ _ = normal
 
-        a'' = a' + (fromIntegral (differ n' q))
+        a'' = a' + differ n' q
     downByInterval c i = upByInterval c (invert i)
 
 
