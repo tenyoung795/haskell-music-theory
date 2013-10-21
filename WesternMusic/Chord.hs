@@ -1,42 +1,72 @@
+{-# LANGUAGE FlexibleInstances,
+    UndecidableInstances,
+    MultiParamTypeClasses,
+    FunctionalDependencies #-}
 module WesternMusic.Chord where
 
-import Data.Maybe
-import qualified WesternMusic.Interval as I
+import Control.Monad.Instances
+import Data.Either
+import Data.IndexError
+import Data.List
+import WesternMusic.Enharmonic
+import WesternMusic.Tonal
+import WesternMusic.Pitch
+import WesternMusic.Interval
 
-class Chord c where
-    quality :: (Integral i, Integral j) => c -> i -> Maybe (I.Quality j)
-    quality chord 0 = Just $ firstQuality chord
-    quality chord 1 = Just $ secondQuality chord
-    quality chord n | n < 0 = Nothing
+class (Intervalable i, Integral j) => Chord c i j | c -> i, c -> j where
+    quality :: (Integral k) => c -> k -> Either (IndexError k) (Quality j)
+    quality chord 0 = Right $ firstQuality chord
+    quality chord 1 = Right $ secondQuality chord
+    quality chord n
+        | n < 0 = Left NegativeIndex
+        | n >= numQ = Left $ OverIndex numQ where
+            numQ = numQualities chord
 
-    firstQuality :: (Integral i) => c -> I.Quality i
-    secondQuality :: (Integral i) => c -> I.Quality i
-    numQualities :: (Integral i) => c -> i
+    firstQuality :: c -> Quality j
+    secondQuality :: c -> Quality j
 
-    qualities :: (Integral i) => c -> [I.Quality i]
-    qualities chord = mapMaybe (quality chord) [0 .. numQualities chord]
+    qualities :: c -> [Quality j]
+    qualities chord = rights $ map (quality chord) [0 .. numQualities chord]
+    numQualities :: (Integral k) => c -> k
 
-    member :: (I.Intervalable i, Integral j) => c -> i -> j -> Maybe i
-    member chord root 0 = Just root
-    member chord root 1 = Just $ third chord root
-    member chord root 2 = Just $ fifth chord root
-    member chord root n
-        | n > 0 = do
-            q <- quality chord (n - 1)
-            return $ root `I.upByInterval` I.Interval q (1 + 2 * n)
-        | otherwise = Nothing
+    member :: (Integral k) => c -> k -> Either (IndexError k) i
+    member chord 0 = Right $ root chord
+    member chord 1 = Right $ third chord
+    member chord 2 = Right $ fifth chord
+    member chord n = do
+        q <- quality chord (n - 1)
+        return $ root chord `upByInterval` Interval q (1 + 2 * n)
 
-    third :: (I.Intervalable i) => c -> i -> i
-    third chord root = root `I.upByInterval` I.Interval (firstQuality chord) 3
-    fifth :: (I.Intervalable i) => c -> i -> i
-    fifth chord root = root `I.upByInterval` I.Interval (secondQuality chord) 5
+    root :: c -> i
+    third :: c -> i
+    third chord = root chord `upByInterval` Interval (firstQuality chord) 3
+    fifth :: c -> i
+    fifth chord = root chord `upByInterval` Interval (secondQuality chord) 5
 
-    members :: (I.Intervalable i) => c -> i -> [i]
-    members chord root = mapMaybe (member chord root) [0 .. 1 + numQualities chord]
+    members :: c -> [i]
+    members chord = rights $ map (member chord) [0 .. numMembers chord]
+    numMembers :: (Integral k) => c -> k
+    numMembers chord = 1 + numQualities chord
 
-    inversion :: (Integral i) => c -> i
+    inversion :: (Integral k) => c -> k
 
-    note :: (I.Intervalable i, Integral j) => c -> i -> j -> Maybe i
-    bass :: (I.Intervalable i) => c -> i -> i
-    notes :: (I.Intervalable i) => c -> i -> [i]
+    note :: (Integral k) => c -> k -> Either (IndexError k) i
+    note chord n
+        | n < 0 = Left NegativeIndex
+        | n >= numM = Left $ OverIndex numM
+        | otherwise = Right $ members chord `genericIndex` n where
+            numM = numMembers chord
+
+    bass :: c -> i
+    bass chord = members chord `genericIndex` inversion chord
+    notes :: c -> [i]
+    notes chord = b:(left ++ right) where
+        (left, b:right) = inversion chord `genericSplitAt` members chord
+
+instance (Chord c i j) => Enharmonic c where
+    x `enharmonic` y = inversion x == inversion y && members x `enharmonicLists` members y where
+        [] `enharmonicLists` [] = True
+        (_:_) `enharmonicLists` [] = False
+        [] `enharmonicLists` (_:_) = False
+        (lh:lt) `enharmonicLists` (rh:rt) = lh `enharmonic` rh && lt `enharmonicLists` rt
 
