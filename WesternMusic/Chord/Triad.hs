@@ -50,8 +50,8 @@ figuredBass Second = "6/4"
 calculateTriad :: (Intervalable i, Integral j) => i -> i -> i -> Maybe (Triad i j)
 calculateTriad x y z = doCalculateTriad (x `ascInterval` y) (x `ascInterval` z) (z `ascInterval` y) where
     doCalculateTriad (Interval q 3) (Interval r 5) _ = Just (Triad x q r Root)
-    doCalculateTriad _ (Interval r0 4) (Interval q 3) = Just (Triad x q (invert r0) First)
-    doCalculateTriad _ (Interval r0 4) (Interval q0 6) = Just (Triad x (invert q0) (invert r0) Second)
+    doCalculateTriad (Interval q0 6) _ (Interval r0 4) = Just (Triad y (invert q0) (invert r0) First)
+    doCalculateTriad (Interval r0 4) _ (Interval q0 6) = Just (Triad y (invert q0) (invert r0) Second)
     doCalculateTriad _ _ _ = Nothing
 
 instance (Intervalable i, Show i, Integral j, Show j) => Show (Triad i j) where
