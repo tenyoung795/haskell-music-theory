@@ -26,7 +26,7 @@ class (Intervalable i, Integral j) => Chord c i j | c -> i, c -> j where
     secondQuality :: c -> Quality j
 
     qualities :: c -> [Quality j]
-    qualities chord = rights $ map (quality chord) [0 .. numQualities chord]
+    qualities chord = rights $ map (quality chord) [0 .. numQualities chord - 1]
     numQualities :: (Integral k) => c -> k
 
     member :: (Integral k) => c -> k -> Either (IndexError k) i
@@ -44,7 +44,7 @@ class (Intervalable i, Integral j) => Chord c i j | c -> i, c -> j where
     fifth chord = root chord `upByInterval` Interval (secondQuality chord) 5
 
     members :: c -> [i]
-    members chord = rights $ map (member chord) [0 .. numMembers chord]
+    members chord = rights $ map (member chord) [0 .. numMembers chord - 1]
     numMembers :: (Integral k) => c -> k
     numMembers chord = 1 + numQualities chord
 
