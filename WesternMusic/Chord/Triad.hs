@@ -6,7 +6,7 @@ module WesternMusic.Chord.Triad where
 import WesternMusic.Chord
 import WesternMusic.Pitch
 import WesternMusic.Interval
-import Data.Char
+import Data.Char(toLower)
 import Data.Cyclic
 import Data.IndexError
 
@@ -34,13 +34,13 @@ instance (Intervalable i, Integral j) => Chord (Triad i j) i j where
             Triad root _ _ inversion = chord
             doNote Root 0 = root
             doNote Root 1 = third chord 
-            doNote Root 2 = fifth chord
+            doNote Root _ = fifth chord
             doNote First 0 = third chord
             doNote First 1 = root
-            doNote First 2 = fifth chord 
+            doNote First _ = fifth chord 
             doNote Second 0 = fifth chord
             doNote Second 1 = root
-            doNote Second 2 = third chord
+            doNote Second _ = third chord
 
 figuredBass :: Inversion -> String
 figuredBass Root = ""
@@ -55,45 +55,39 @@ calculateTriad x y z = doCalculateTriad (x `ascInterval` y) (x `ascInterval` z) 
     doCalculateTriad _ _ _ = Nothing
 
 instance (Intervalable i, Show i, Integral j, Show j) => Show (Triad i j) where
-    show t = show p ++ sign q r ++ inversion i where
+    show t = show p ++ sign q r ++ inv i where
         Triad p q r i = t
         sign Major (Quality 0) = ""
         sign Minor (Quality 0) = "-"
         sign Minor (Quality (-1)) = "°"
         sign Major (Quality 1) = "+"
         sign q0 r0 = show q0 ++ show r0
-        inversion Root = ""
-        inversion First = '/':(show (third t))
-        inversion Second = '/':(show (fifth t))
+        inv Root = ""
+        inv First = '/':show (third t)
+        inv Second = '/':show (fifth t)
     
-figuredRoman :: (Intervalable i, Integral j) => Triad i j -> i -> String
-figuredRoman (Triad p q r i) tonic = roman ((letter tonic) `countCW` (letter p)) q r ++ figuredBass i where
-    roman 0 Major (Quality 0) = "I"
-    roman 1 Major (Quality 0) = "II"
-    roman 2 Major (Quality 0) = "III"
-    roman 3 Major (Quality 0) = "IV"
-    roman 4 Major (Quality 0) = "V"
-    roman 5 Major (Quality 0) = "VI"
-    roman 6 Major (Quality 0) = "VII"
-    roman 0 Minor (Quality 0) = "i"
-    roman 1 Minor (Quality 0) = "ii"
-    roman 2 Minor (Quality 0) = "iii"
-    roman 3 Minor (Quality 0) = "iv"
-    roman 4 Minor (Quality 0) = "v"
-    roman 5 Minor (Quality 0) = "vi"
-    roman 6 Minor (Quality 0) = "vii"
-    roman 0 Minor (Quality (-1)) = "i°"
-    roman 1 Minor (Quality (-1)) = "ii°"
-    roman 2 Minor (Quality (-1)) = "iii°"
-    roman 3 Minor (Quality (-1)) = "iv°"
-    roman 4 Minor (Quality (-1)) = "v°"
-    roman 5 Minor (Quality (-1)) = "vi°"
-    roman 6 Minor (Quality (-1)) = "vii°"
-    roman 0 Major (Quality 1) = "I+"
-    roman 1 Major (Quality 1) = "II+"
-    roman 2 Major (Quality 1) = "III+"
-    roman 3 Major (Quality 1) = "IV+"
-    roman 4 Major (Quality 1) = "V+"
-    roman 5 Major (Quality 1) = "VI+"
-    roman 6 Major (Quality 1) = "VII+"
-    
+figuredRoman :: (Intervalable i, Integral j, Show j) => Triad i j -> i -> String
+figuredRoman (Triad p q r i) tonic = roman q r (letter tonic `countCW` letter p) ++ figuredBass i where
+    rom 0 = "I"
+    rom 1 = "II"
+    rom 2 = "III"
+    rom 3 = "IV"
+    rom 4 = "V"
+    rom 5 = "VI"
+    rom 6 = "VII"
+    rom _ = ""
+    roman Major (Quality 0) n0 = rom n0
+    roman Minor (Quality 0) n0 = map toLower (rom n0)
+    roman Minor (Quality (-1)) n0 = (map toLower . rom) n0 ++ "°"
+    roman Major (Quality 1) n0 = rom n0 ++ "+"
+    roman q0 Major n0 = rom n0 ++ show q0 ++ show Major
+    roman q0 Minor n0 = (map toLower . rom) n0 ++ show q0 ++ show Minor
+    roman (Quality q0) (Quality 0) n0 = (trans . rom) n0 ++ show (Quality q0) ++ show (Quality 0) where
+        trans
+            | q0 > 0 = id
+            | otherwise = map toLower
+    roman q0 (Quality r0) n0 = (trans . rom) n0 ++ show q0 ++ show (Quality r0) where
+        trans
+            | r0 >= 0 = id
+            | otherwise = map toLower
+ 
