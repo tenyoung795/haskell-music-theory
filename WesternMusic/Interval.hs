@@ -1,8 +1,5 @@
 module WesternMusic.Interval where
 
--- This should be imported as qualified
--- as Major and Minor are overloaded concepts.
-
 import Data.Cyclic
 import WesternMusic.Enharmonic
 import WesternMusic.Tonal
@@ -52,10 +49,10 @@ instance (Show i, Integral i) => Show (Quality i) where
     show Minor = "m"
     show (Quality 0) = "P"
     show (Quality 1) = "A"
-    show (Quality (-1)) = "D"
+    show (Quality (-1)) = "d"
     show (Quality n)
-        | n < 0 = show (-n) ++ "D"
-        | otherwise = show n ++ "A"
+        | n < 0 = '(':(show (-n) ++ "d)")
+        | otherwise = '(':(show n ++ "A)")
 
 data Interval qualifier num = Interval (Quality qualifier) num deriving(Eq)
 
